@@ -3697,6 +3697,7 @@ Francesco Antonucci</em>
 
 
 
+
     // familyGreetButtons: клик по узлу древа -> видео-поздравление
     (function () {
       var MAP = [
@@ -3940,6 +3941,7 @@ function gotoAlbumPage(idx) {
 <div class="floating-heart" style="left: 77.7634vw; font-size: 28.1563px; animation-duration: 6.97136s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 63.982vw; font-size: 22.4577px; animation-duration: 6.3266s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 30.266vw; font-size: 23.9817px; animation-duration: 5.33915s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 99.6428vw; font-size: 15.4687px; animation-duration: 6.23637s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 44.3251vw; font-size: 15.1627px; animation-duration: 4.18776s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 9.48485vw; font-size: 21.7745px; animation-duration: 4.93796s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 99.9503vw; font-size: 14.2407px; animation-duration: 5.64198s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 78.912vw; font-size: 15.0101px; animation-duration: 4.1195s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div>
 
 <div class="floating-heart" style="left: 62.7869vw; font-size: 29.9571px; animation-duration: 6.23875s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 91.4658vw; font-size: 28.1888px; animation-duration: 7.8222s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 95.4547vw; font-size: 25.1264px; animation-duration: 6.86433s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 69.9525vw; font-size: 24.0671px; animation-duration: 7.65319s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 65.0125vw; font-size: 24.9298px; animation-duration: 7.69761s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 22.1247vw; font-size: 22.8482px; animation-duration: 4.64322s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 48.9457vw; font-size: 22.801px; animation-duration: 7.42298s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div>
+
 
 
 
@@ -4332,6 +4334,7 @@ function switchRusinovoTab(idx) {
 </script>
 <script id="v1-media-js">(()=>{const tarot=['Звезда','Луна','Солнце','Мир','Сила'];const prop=['Удача любит движение.','Ответ придёт через встречу.','Хорошие новости уже близко.'];const pick=a=>a[Math.floor(Math.random()*a.length)];document.querySelectorAll('[data-v1-oracle-btn]').forEach(b=>b.onclick=()=>{const c=b.closest('[data-v1-oracle]'),o=document.getElementById('v1-oracle-'+b.dataset.v1OracleBtn),m=c.dataset.mode;if(m==='Таро')o.textContent='Абадон раскладывает: '+pick(tarot)+' · '+pick(tarot)+' · '+pick(tarot)+' — перемены уже рядом.';else if(m==='Хрустальный шар')o.textContent='Макс видит: '+pick(prop);else o.textContent='Вильзивул поставил защиту: лишние тревоги проходят мимо.'})})();</script><script id="family-interactions-js">
 (function () {
+  function init(){
   var album = document.getElementById('albumSpreadContainer');
   if (album && !album.dataset.swipeReady) {
     album.dataset.swipeReady = '1';
@@ -4412,6 +4415,11 @@ function switchRusinovoTab(idx) {
     if (!player || document.getElementById('familyTabTv')?.style.display === 'none') return;
     if (ev.key === ' ') { ev.preventDefault(); player.paused ? playVhs() : pauseVhs(); }
   });
+  return true;
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){try{init()}catch(e){}});}
+  else { try{ init(); }catch(e){} }
+  document.addEventListener('y2k:issue-unsealed',function(){ setTimeout(function(){try{init()}catch(e){}},30); });
 })();
 </script><script id="tabbed-interface-js">
 (function(){
@@ -5011,10 +5019,14 @@ function playMashaVideo() {
 <!-- dev-bypass-localhost-only -->
 <script id="milka-box-js">
 (function(){
-  if(window.__milkaBox)return; window.__milkaBox=1;
+  function init(){
+  if(window.__milkaBoxReady)return true;
   var KEY='milka_box_open_v1';
   var panel=document.getElementById('issue-panel-me');
-  if(!panel)return;
+  if(!panel)return false;
+  if(panel.getAttribute('data-mb-ready')==='1')return true;
+  panel.setAttribute('data-mb-ready','1');
+  window.__milkaBoxReady=1;
 
   function unlockedFlag(){
     try{ return localStorage.getItem(KEY)==='1'; }catch(e){ return !!window.__milkaBoxOpen; }
@@ -5052,6 +5064,11 @@ function playMashaVideo() {
   lock();
   // страница могла открыться раньше истории — если флаг уже стоит, снимаем замок
   if(unlockedFlag()) unlock(false);
+  return true;
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){try{init()}catch(e){}});}
+  else { try{ if(!init()) setTimeout(init,50); }catch(e){} }
+  document.addEventListener('y2k:issue-unsealed',function(){ setTimeout(function(){try{init()}catch(e){}},30); });
 })();
 </script><script id="family-vhs-sync-js">
 (function () {
@@ -5185,8 +5202,15 @@ function playMashaVideo() {
 <script id="pets-anim-js">
 (function(){
   var CLIPS = {"vilzivul": "../assets/pets_anim/vilzivul.mp4", "max": "../assets/pets_anim/max.mp4", "abadon": "../assets/pets_anim/abadon.mp4", "kot": "../assets/pets_anim/kot.mp4"};
+  function init(){
+  if(document.getElementById('issue-panel-pets')){
+    if(document.getElementById('issue-panel-pets').getAttribute('data-pa-ready')==='1'&&document.querySelector('#issue-panel-pets .orc-clip')) return true;
+    document.getElementById('issue-panel-pets').setAttribute('data-pa-ready','1');
+  }
   var cards = document.querySelectorAll('#issue-panel-pets .v1-oracle');
   cards.forEach(function(card){
+    if(card.getAttribute('data-pa-clip')==='1') return;
+    card.setAttribute('data-pa-clip','1');
     var id = card.getAttribute('data-v1-oracle');
     var src = CLIPS[id];
     if(!src) return;
@@ -5235,14 +5259,22 @@ function playMashaVideo() {
       p.classList.remove('is-live');
     });
   }); });
+  return true;
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){try{init()}catch(e){}});}
+  else { try{ if(!init()) setTimeout(init,50); }catch(e){} }
+  document.addEventListener('y2k:issue-unsealed',function(){ setTimeout(function(){try{init()}catch(e){}},30); });
 })();
 </script>
 <script id="pets-live-js">
 (function(){
   var SFX = {"vilzivul": "../assets/pets_sfx/vilzivul.m4a", "max": "../assets/pets_sfx/max.m4a", "abadon": "../assets/pets_sfx/abadon.m4a", "kot": "../assets/pets_sfx/kot.m4a", "amb": "../assets/pets_sfx/amb.m4a"};
   var KEY_SOUND = 'pets.sound', KEY_TALLY = 'pets.tally';
+  function init(){
   var panel = document.getElementById('issue-panel-pets');
-  if(!panel) return;
+  if(!panel) return false;
+  if(panel.getAttribute('data-pl-ready')==='1') return true;
+  panel.setAttribute('data-pl-ready','1');
 
   /* ---------------- звук ---------------- */
   var soundOn = true;
@@ -5469,6 +5501,11 @@ function playMashaVideo() {
     });
   });
   tally(total);
+  return true;
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){try{init()}catch(e){}});}
+  else { try{ if(!init()) setTimeout(init,50); }catch(e){} }
+  document.addEventListener('y2k:issue-unsealed',function(){ setTimeout(function(){try{init()}catch(e){}},30); });
 })();
 </script>
 <script id="friends-v2-js">
@@ -5799,8 +5836,11 @@ function playMashaVideo() {
 
 <script id="six-issues-js">
 (function(){
+  function init(){
   var nav=document.getElementById('issueTabs');
-  if(!nav) return;
+  if(!nav) return false;
+  if(nav.getAttribute('data-six-ok')==='1'){return true;}
+  nav.setAttribute('data-six-ok','1');
   function mark(){
     var act=nav.querySelector('.issue-tab[aria-selected="true"]');
     document.body.dataset.iss = act ? (act.dataset.panel||'') : '';
@@ -5809,6 +5849,11 @@ function playMashaVideo() {
   nav.addEventListener('keydown',function(){setTimeout(mark,0)},true);
   window.addEventListener('hashchange',function(){setTimeout(mark,0)});
   mark();
+  return true;
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){try{init()}catch(e){}});}
+  else { try{ if(!init()) setTimeout(init,50); }catch(e){} }
+  document.addEventListener('y2k:issue-unsealed',function(){ setTimeout(function(){try{init()}catch(e){}},30); });
 })();
 </script>
 <script id="future-capsule-js">(function(){if(document.getElementById('future-capsule-css'))return;var s=document.createElement('style');s.id='future-capsule-css';s.textContent="#issueTabs [data-panel=\"future\"]{display:none}\n#issueTabs [data-panel=\"future\"].is-unlocked{display:inline-flex;align-items:center;gap:6px;\n  background:linear-gradient(120deg,#ffd600,#ff4b91);color:#160b18;\n  box-shadow:0 0 0 2px rgba(255,214,0,.35),0 8px 26px rgba(255,75,145,.35);\n  animation:capPulse 1.6s ease-in-out 3}\n@keyframes capPulse{50%{box-shadow:0 0 0 6px rgba(255,214,0,.14),0 8px 32px rgba(255,75,145,.55)}}\n#issue-panel-future .fc-wrap{max-width:760px;margin:0 auto;padding:8px 4px 40px}\n.fc-intro{text-align:center;margin-bottom:24px}\n.fc-intro .fc-kicker{font:700 11px/1 \"Montserrat\",sans-serif;letter-spacing:.28em;\n  text-transform:uppercase;color:#ffd600}\n.fc-intro h2{font:800 clamp(26px,4vw,44px)/1.08 \"Syne\",sans-serif;color:#fff;margin:10px 0}\n.fc-intro p{color:#cbbcd8;font:500 14px/1.7 \"Montserrat\",sans-serif;margin:0 auto;max-width:560px}\n.fc-photo{position:relative;display:grid;place-items:center;min-height:240px;margin:18px 0;\n  border:1px dashed rgba(255,214,0,.4);border-radius:16px;overflow:hidden;\n  background:radial-gradient(circle at 50% 30%,rgba(255,75,145,.12),rgba(8,6,14,.9))}\n.fc-photo video,.fc-photo canvas{max-width:100%;max-height:340px;width:auto;height:auto;\n  border-radius:12px;transform:scaleX(-1)}\n.fc-photo canvas{display:none}\n.fc-photo.is-shot video{display:none}\n.fc-photo.is-shot canvas{display:block}\n.fc-photo .fc-ph-empty{color:#8f86a4;font:500 13px/1.6 \"Montserrat\",sans-serif;text-align:center;padding:30px}\n.fc-photo.is-shot .fc-ph-empty{display:none}\n.fc-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0 22px}\n.fc-btn{cursor:pointer;border:1px solid rgba(255,214,0,.5);border-radius:999px;\n  padding:11px 22px;font:700 13px/1 \"Montserrat\",sans-serif;letter-spacing:.04em;\n  color:#0b0b10;background:#ffd600;transition:filter .2s,transform .2s}\n.fc-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}\n.fc-btn.ghost{background:transparent;color:#ffd600}\n.fc-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}\n.fc-textarea{width:100%;min-height:130px;box-sizing:border-box;resize:vertical;\n  background:rgba(0,0,0,.5);border:1px solid #ff4b91;border-radius:12px;color:#fff;\n  padding:15px;font:500 14px/1.6 \"Montserrat\",sans-serif;outline:none}\n.fc-textarea:focus{border-color:#ffd600;box-shadow:0 0 0 3px rgba(255,214,0,.12)}\n.fc-seal{text-align:center;margin-top:16px}\n.fc-seal-note{color:#9d94b0;font:500 12px/1.6 \"Montserrat\",sans-serif;margin-top:12px;min-height:18px}\n.fc-sealed{padding:34px 22px;border:1px solid rgba(255,214,0,.45);border-radius:18px;\n  text-align:center;background:linear-gradient(160deg,rgba(30,20,42,.9),rgba(10,8,18,.95))}\n.fc-sealed .fc-stamp{font-size:54px;line-height:1;filter:drop-shadow(0 6px 18px rgba(255,214,0,.4))}\n.fc-sealed h3{font:800 24px/1.2 \"Syne\",sans-serif;color:#ffd600;margin:14px 0 8px}\n.fc-sealed p{color:#d6cbdf;font:500 14px/1.7 \"Montserrat\",sans-serif;margin:0}\n.fc-sealed img{max-width:220px;border-radius:12px;margin:16px auto 0;display:block;transform:scaleX(-1)}\n.fc-sealed blockquote{color:#fff;font:italic 500 14px/1.7 Georgia,serif;\n  margin:16px auto 0;max-width:480px;border-left:2px solid #ff4b91;padding-left:16px;text-align:left}\n@media(max-width:640px){#issue-panel-future .fc-wrap{padding:4px 2px 30px}.fc-photo{min-height:180px}}";document.head.appendChild(s);})();
