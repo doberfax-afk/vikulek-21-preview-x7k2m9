@@ -3696,6 +3696,7 @@ Francesco Antonucci</em>
 
 
 
+
     // familyGreetButtons: клик по узлу древа -> видео-поздравление
     (function () {
       var MAP = [
@@ -3939,6 +3940,7 @@ function gotoAlbumPage(idx) {
 <div class="floating-heart" style="left: 77.7634vw; font-size: 28.1563px; animation-duration: 6.97136s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 63.982vw; font-size: 22.4577px; animation-duration: 6.3266s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 30.266vw; font-size: 23.9817px; animation-duration: 5.33915s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 99.6428vw; font-size: 15.4687px; animation-duration: 6.23637s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 44.3251vw; font-size: 15.1627px; animation-duration: 4.18776s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 9.48485vw; font-size: 21.7745px; animation-duration: 4.93796s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 99.9503vw; font-size: 14.2407px; animation-duration: 5.64198s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 78.912vw; font-size: 15.0101px; animation-duration: 4.1195s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div>
 
 <div class="floating-heart" style="left: 62.7869vw; font-size: 29.9571px; animation-duration: 6.23875s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 91.4658vw; font-size: 28.1888px; animation-duration: 7.8222s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 95.4547vw; font-size: 25.1264px; animation-duration: 6.86433s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 69.9525vw; font-size: 24.0671px; animation-duration: 7.65319s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 65.0125vw; font-size: 24.9298px; animation-duration: 7.69761s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 22.1247vw; font-size: 22.8482px; animation-duration: 4.64322s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 48.9457vw; font-size: 22.801px; animation-duration: 7.42298s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div>
+
 
 
 
@@ -5471,14 +5473,17 @@ function playMashaVideo() {
 </script>
 <script id="friends-v2-js">
 (function(){
+  function init(){
   var panel = document.getElementById('issue-panel-friends');
-  if(!panel) return;
+  if(!panel) return false;
+  if(panel.getAttribute('data-fz-ready')==='1') return true;
   var track = panel.querySelector('#fzTrack');
   var spreads = [].slice.call(panel.querySelectorAll('.fz-spread'));
   var dots = [].slice.call(panel.querySelectorAll('.fz-ix'));
   var prev = panel.querySelector('#fzPrev'), next = panel.querySelector('#fzNext');
   var prog = panel.querySelector('#fzProg');
-  if(!track || !spreads.length) return;
+  if(!track || !spreads.length) return false;
+  panel.setAttribute('data-fz-ready','1');
   var cur = 0;
 
   function go(i, smooth){
@@ -5519,12 +5524,21 @@ function playMashaVideo() {
     else if (e.key === 'ArrowLeft') { go(cur - 1, true); }
   });
   paint();
+  return true;
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){try{init()}catch(e){}});
+  } else { try{ if(!init()) setTimeout(init,50); }catch(e){} }
+  document.addEventListener('y2k:issue-unsealed',function(){ setTimeout(function(){try{init()}catch(e){}},30); });
 })();
 
 /* ---------- фотоальбом Вилены: полноэкранный просмотр ---------- */
 (function(){
+  function initLb(){
   var panel = document.getElementById('issue-panel-friends');
-  if (!panel) return;
+  if (!panel) return false;
+  if (panel.getAttribute('data-fz-lb')) return true;
+  panel.setAttribute('data-fz-lb','1');
   var lb = document.getElementById('fzLb');
   if (!lb){
     lb = document.createElement('div');
@@ -5598,6 +5612,12 @@ function playMashaVideo() {
     if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) show(at + (dx < 0 ? 1 : -1));
     else if (dy > 90) close();
   }, {passive: true});
+  return true;
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){try{initLb()}catch(e){}});
+  } else { try{ if(!initLb()) setTimeout(initLb,50); }catch(e){} }
+  document.addEventListener('y2k:issue-unsealed',function(){ setTimeout(function(){try{initLb()}catch(e){}},30); });
 })();
 </script>
 
