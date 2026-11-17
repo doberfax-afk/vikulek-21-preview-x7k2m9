@@ -3694,6 +3694,7 @@ Francesco Antonucci</em>
 
 
 
+
     // familyGreetButtons: клик по узлу древа -> видео-поздравление
     (function () {
       var MAP = [
@@ -3937,6 +3938,7 @@ function gotoAlbumPage(idx) {
 <div class="floating-heart" style="left: 77.7634vw; font-size: 28.1563px; animation-duration: 6.97136s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 63.982vw; font-size: 22.4577px; animation-duration: 6.3266s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 30.266vw; font-size: 23.9817px; animation-duration: 5.33915s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 99.6428vw; font-size: 15.4687px; animation-duration: 6.23637s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 44.3251vw; font-size: 15.1627px; animation-duration: 4.18776s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 9.48485vw; font-size: 21.7745px; animation-duration: 4.93796s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 99.9503vw; font-size: 14.2407px; animation-duration: 5.64198s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 78.912vw; font-size: 15.0101px; animation-duration: 4.1195s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div>
 
 <div class="floating-heart" style="left: 62.7869vw; font-size: 29.9571px; animation-duration: 6.23875s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 91.4658vw; font-size: 28.1888px; animation-duration: 7.8222s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 95.4547vw; font-size: 25.1264px; animation-duration: 6.86433s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 69.9525vw; font-size: 24.0671px; animation-duration: 7.65319s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 65.0125vw; font-size: 24.9298px; animation-duration: 7.69761s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div><div class="floating-heart" style="left: 22.1247vw; font-size: 22.8482px; animation-duration: 4.64322s;"><i class="fa-solid fa-heart" style="color: #b388ff"></i></div><div class="floating-heart" style="left: 48.9457vw; font-size: 22.801px; animation-duration: 7.42298s;"><i class="fa-solid fa-heart" style="color: #ffd600"></i></div>
+
 
 
 
@@ -4409,26 +4411,41 @@ function switchRusinovoTab(idx) {
 })();
 </script><script id="tabbed-interface-js">
 (function(){
-  var nav=document.getElementById('issueTabs');
-  if(!nav)return;
-  var buttons=[].slice.call(nav.querySelectorAll('[role="tab"]'));
-  var panels=[].slice.call(document.querySelectorAll('#issueMain > section.issue-panel'));
-  function select(id,move){
-    var key=id.replace('issue-panel-','');
-    buttons.forEach(function(b){var yes=b.dataset.panel===key;b.setAttribute('aria-selected',yes?'true':'false');b.tabIndex=yes?0:-1;});
-    panels.forEach(function(p){var yes=p.id===id;p.classList.toggle('is-active',yes);p.hidden=!yes;});
-    if(move){var active=document.getElementById(id);if(active)active.focus({preventScroll:true});}
-    history.replaceState(null,'','#'+id.replace('issue-panel-',''));
+  var inited=false;
+  function init(){
+    var nav=document.getElementById('issueTabs');
+    if(!nav)return false;
+    var buttons=[].slice.call(nav.querySelectorAll('[role="tab"]'));
+    var panels=[].slice.call(document.querySelectorAll('#issueMain > section.issue-panel'));
+    if(!buttons.length||!panels.length)return false;
+    // avoid double-binding if the DOM was replaced and init runs again
+    var already=nav.getAttribute('data-tabs-ok');
+    if(already==='1'){return true;}
+    nav.setAttribute('data-tabs-ok','1');
+    function select(id,move){
+      var key=id.replace('issue-panel-','');
+      buttons.forEach(function(b){var yes=b.dataset.panel===key;b.setAttribute('aria-selected',yes?'true':'false');b.tabIndex=yes?0:-1;});
+      panels.forEach(function(p){var yes=p.id===id;p.classList.toggle('is-active',yes);p.hidden=!yes;});
+      if(move){var active=document.getElementById(id);if(active)active.focus({preventScroll:true});}
+      history.replaceState(null,'','#'+id.replace('issue-panel-',''));
+    }
+    buttons.forEach(function(b,i){
+      b.addEventListener('click',function(){select('issue-panel-'+b.dataset.panel,false)});
+      b.addEventListener('keydown',function(e){var n=i;if(e.key==='ArrowRight'||e.key==='ArrowDown')n=(i+1)%buttons.length;if(e.key==='ArrowLeft'||e.key==='ArrowUp')n=(i-1+buttons.length)%buttons.length;if(e.key==='Home')n=0;if(e.key==='End')n=buttons.length-1;if(n!==i){e.preventDefault();buttons[n].focus();select('issue-panel-'+buttons[n].dataset.panel,true)}});
+    });
+    var wanted=(location.hash||'').slice(1);var found=buttons.some(function(b){return b.dataset.panel===wanted});
+    // the Interactive tab is the navigation hub: open it first unless a hash
+    // deep-links to a specific chapter.
+    var hub=buttons.filter(function(b){return b.dataset.panel==='interactive'})[0];
+    select('issue-panel-'+(found?wanted:(hub||buttons[0]).dataset.panel),false);
+    return true;
   }
-  buttons.forEach(function(b,i){
-    b.addEventListener('click',function(){select('issue-panel-'+b.dataset.panel,false)});
-    b.addEventListener('keydown',function(e){var n=i;if(e.key==='ArrowRight'||e.key==='ArrowDown')n=(i+1)%buttons.length;if(e.key==='ArrowLeft'||e.key==='ArrowUp')n=(i-1+buttons.length)%buttons.length;if(e.key==='Home')n=0;if(e.key==='End')n=buttons.length-1;if(n!==i){e.preventDefault();buttons[n].focus();select('issue-panel-'+buttons[n].dataset.panel,true)}});
-  });
-  var wanted=(location.hash||'').slice(1);var found=buttons.some(function(b){return b.dataset.panel===wanted});
-  // the Interactive tab is the navigation hub: open it first unless a hash
-  // deep-links to a specific chapter.
-  var hub=buttons.filter(function(b){return b.dataset.panel==='interactive'})[0];
-  select('issue-panel-'+(found?wanted:(hub||buttons[0]).dataset.panel),false);
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){init();document.addEventListener('y2k:issue-unsealed',function(){setTimeout(init,30);});});
+  }else{
+    if(!init())setTimeout(init,60);
+    document.addEventListener('y2k:issue-unsealed',function(){setTimeout(init,30);});
+  }
 })();
 </script><script id="oracle-polish-js">
 (function(){
@@ -4651,63 +4668,77 @@ function switchRusinovoTab(idx) {
 
 </script><script id="hub-nav-js">
 (function(){
-  if(window.__hubNav)return;window.__hubNav=1;
-  // onclick on the cards names the modal it used to open; map that to the tab
-  // the content actually lives in now.
-  var MAP={'modalFriends':'friends','modalFamily':'family',
-           'modalOracle':'pets','modalSpace':'space'};
-  function goToTab(key){
-    var b=[].slice.call(document.querySelectorAll('#issueTabs [role="tab"]'))
-      .filter(function(t){return t.dataset.panel===key})[0];
-    if(!b)return false;
-    b.click();
-    var panel=document.getElementById('issue-panel-'+key);
-    if(panel)panel.scrollIntoView({behavior:'smooth',block:'start'});
-    return true;
+  if(window.__hubNavInited)newHubNav();else{window.__hubNavInited=1;newHubNav();}
+  function newHubNav(){
+    if(document.readyState==='loading'){
+      if(!window.__hubNavOnload){
+        window.__hubNavOnload=1;
+        document.addEventListener('DOMContentLoaded',function(){try{wireHub();}catch(e){}});
+      }
+    }else{try{wireHub();}catch(e){}}
   }
-  window.goToTab=goToTab;
-  function convert(btn){
-    var oc=btn.getAttribute('onclick')||'';
-    var modal=oc.match(/openModal\('(\w+)'\)/);
-    var key=modal?MAP[modal[1]]:(/goToSpace\(\)/.test(oc)?'space':null);
-    if(!key)return;
-    btn.setAttribute('data-hub-to',key);
-    btn.removeAttribute('onclick');
-    // CSS draws an animated arrow now, so the literal ➔ would double up
-    btn.textContent=btn.textContent.replace(/➔/g,'').trim();
-  }
-  function bind(card){
-    var btn=card.querySelector('.card-btn');
-    var key=btn&&btn.dataset.hubTo;
-    if(!key)return;
-    // the card itself is the navigation target now
-    card.setAttribute('data-hub-to',key);
-    card.setAttribute('role','link');
-    card.setAttribute('tabindex','0');
-    card.setAttribute('aria-label','Перейти к разделу «'+btn.textContent.trim()+'»');
-    card.addEventListener('click',function(){goToTab(key);});
-    card.addEventListener('keydown',function(e){
-      if(e.key==='Enter'||e.key===' '){e.preventDefault();goToTab(key);}
-    });
-  }
-  [].slice.call(document.querySelectorAll('#issue-panel-interactive .chapter-card'))
-    .forEach(function(card){
+  newHubNav();
+  function wireHub(){
+    document.querySelectorAll('#issueTabs [role="tab"]').forEach(t=>{}); // keep simple
+    // onclick on the cards names the modal it used to open; map that to the tab
+    var MAP={'modalFriends':'friends','modalFamily':'family',
+             'modalOracle':'pets','modalSpace':'space'};
+    if(!window.__hubGoToTab){
+      window.__hubGoToTab=function goToTab(key){
+        var b=[].slice.call(document.querySelectorAll('#issueTabs [role="tab"]'))
+          .filter(function(t){return t.dataset.panel===key})[0];
+        if(!b)return false;
+        b.click();
+        var panel=document.getElementById('issue-panel-'+key);
+        if(panel)panel.scrollIntoView({behavior:'smooth',block:'start'});
+        return true;
+      };
+      window.goToTab=window.__hubGoToTab;
+    }
+    var goToTab=window.__hubGoToTab;
+    function convert(btn){
+      var oc=btn.getAttribute('onclick')||'';
+      var mc=String(oc).match(/openModal\('(\w+)'\)/);
+      var key=mc?MAP[mc[1]]:(/goToSpace\(\)/.test(oc)?'space':null);
+      if(!key)return;
+      btn.setAttribute('data-hub-to',key);
+      btn.removeAttribute('onclick');
+      btn.textContent=btn.textContent.replace(/➔/g,'').trim();
+    }
+    function bind(card){
+      if(card.getAttribute('data-hub-bound'))return;
+      var btn=card.querySelector('.card-btn');
+      var key=btn&&btn.dataset.hubTo;
+      if(!key)return;
+      card.setAttribute('data-hub-to',key);
+      card.setAttribute('role','link');
+      card.setAttribute('tabindex','0');
+      card.setAttribute('aria-label','Перейти к разделу «'+btn.textContent.trim()+'»');
+      card.addEventListener('click',function(){goToTab(key);});
+      card.addEventListener('keydown',function(e){
+        if(e.key==='Enter'||e.key===' '){e.preventDefault();goToTab(key);}
+      });
+      card.setAttribute('data-hub-bound','1');
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('#issue-panel-interactive .chapter-card'),function(card){
       convert(card.querySelector('.card-btn'));
       convert(card.querySelector('.card-img-preview'));
       bind(card);
     });
-  // generic navigation: hero CTA etc. Hub cards are bound in bind() above.
-  [].slice.call(document.querySelectorAll('[data-hub-to]')).forEach(function(el){
-    if(el.classList.contains('chapter-card'))return;
-    el.addEventListener('click',function(){goToTab(el.getAttribute('data-hub-to'));});
-  });
-  // the hub is the navigation centre, but a hash deep-link wins: #friends etc.
-  // must still land on that chapter
-  if(!location.hash){goToTab('interactive');}
-  else{
-    var k=location.hash.replace('#','');
-    if(!goToTab(k)){goToTab('interactive');}
+    // generic navigation: hero CTA etc. Hub cards are bound in bind() above.
+    Array.prototype.forEach.call(document.querySelectorAll('[data-hub-to]'),function(el){
+      if(el.classList.contains('chapter-card'))return;
+      if(el.getAttribute('data-hub-bound'))return;
+      el.addEventListener('click',function(){goToTab(el.getAttribute('data-hub-to'));});
+      el.setAttribute('data-hub-bound','1');
+    });
+    if(!location.hash){goToTab('interactive');}
+    else{
+      var k=location.hash.replace('#','');
+      if(!goToTab(k)){goToTab('interactive');}
+    }
   }
+  document.addEventListener('y2k:issue-unsealed',function(){setTimeout(function(){try{wireHub();}catch(e){}},30);});
 })();
 </script>
 <div id="nightclubDiscoOverlay" style="display:none;position:fixed;inset:0;z-index:9999;pointer-events:none;background:radial-gradient(circle at 50% 40%,rgba(255,0,170,.28),rgba(10,0,30,.86) 70%);"><div id="discoRig" style="position:absolute;top:-260px;left:50%;transform:translateX(-50%);width:min(560px,92vw);height:220px;border-radius:18px;background:linear-gradient(90deg,#ff00d4,#00f0ff,#ffd600);filter:blur(2px);opacity:.9;transition:top .5s cubic-bezier(.22,1.4,.36,1)"></div></div>
