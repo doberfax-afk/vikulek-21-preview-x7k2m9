@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07080c">
+<title>РАЗРЕЗ</title>
+<style>
+:root{
+  --bg:#07080c;
+  --ink:#e8eef6;
+  --dim:#8fa3b8;
+  --amber:#ffb570;
+  --cold:#7fb6e8;
+  --uv:#b56cff;
+  --uv2:#4dffd6;
+  --serif:"Georgia","Times New Roman",serif;
+  --mono:"Courier New",monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink)}
+body{
+  font-family:var(--serif);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+img{display:block;max-width:100%}
+
+/* ============ ПРОГРЕСС ============ */
+#bar{
+  position:fixed;left:0;top:0;height:2px;width:0;
+  background:linear-gradient(90deg,#d81e10,#ff6a55 40%,var(--amber));
+  z-index:100;transition:width .18s linear;
+  box-shadow:0 0 12px rgba(255,90,60,.7);
+}
+
+/* ============ СЕКЦИЯ ============ */
+.act{
+  position:relative;
+  min-height:100svh;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  background:#000;
+}
+html{
+  overscroll-behavior-y:contain;
+}
+.act .frame{
+  position:absolute;inset:0;
+  z-index:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.act .frame img{
+  width:100%;height:auto;max-height:100%;
+  object-fit:contain;object-position:center center;
+  opacity:0;transform:scale(1.045);
+  transition:opacity 1.2s ease, transform 2.2s ease;
+}
+.act.live .frame img{opacity:1;transform:scale(1)}
+.act .frame::after{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 45%,
+    rgba(0,0,0,0) 30%,rgba(0,0,0,.55) 74%,rgba(0,0,0,.94) 100%);
+  pointer-events:none;
+}
+
+/* ============ ПАРНЫЕ КАДРЫ (тап = второй слой) ============ */
+.frame.duo{overflow:hidden}
+.act .frame.duo .duo-a,
+.act .frame.duo .duo-b{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:contain;object-position:center center;
+  opacity:0;transform:scale(1.045);
+  transition:opacity 1.2s ease, transform 2.2s ease;
+}
+.act .frame.duo .duo-b{opacity:0;transform:scale(1.12);filter:blur(6px) brightness(.75)}
+.act.live .frame.duo .duo-a{opacity:1;transform:scale(1)}
+.act.live .frame.duo .duo-b{opacity:0}
+.act.peek .frame.duo .duo-a{opacity:0;transform:scale(1.06)}
+.act.peek .frame.duo .duo-b{
+  opacity:1;transform:scale(1);filter:none;
+  transition:opacity .9s ease, transform 6s cubic-bezier(.2,.7,.3,1), filter 1s ease;
+}
+.tapzone{position:absolute;inset:0;z-index:4;cursor:pointer;
+  background:transparent;border:0;padding:0;-webkit-appearance:none;
+  touch-action:pan-y}
+.tapzone:focus-visible{outline:2px solid var(--amber);outline-offset:-6px}
+.tap-hint{
+  position:absolute;left:50%;top:calc(50% - min(30vh,190px));
+  transform:translateX(-50%);z-index:6;
+  font:600 11px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,225,190,.85);text-shadow:0 2px 10px #000;
+  padding:7px 14px;border:1px solid rgba(255,200,150,.32);border-radius:999px;
+  background:rgba(10,8,14,.5);backdrop-filter:blur(4px);
+  pointer-events:none;white-space:nowrap;
+  animation:hintPulse 2.4s ease-in-out infinite;
+}
+.act.peek .tap-hint{opacity:0;transition:opacity .4s ease;animation:none}
+@media (prefers-reduced-motion:reduce){
+  .tap-hint{animation:none}
+  .frame.duo .duo-a,.frame.duo .duo-b{transition:opacity .3s ease}
+}
+
+/* ============ ТЕКСТ ============ */
+.cap{
+  position:relative;z-index:5;
+  width:min(560px,86vw);
+  margin:0 auto;
+  text-align:center;
+  padding:0 6px;
+}
+.cap .line{
+  font-size:clamp(17px,4.4vw,23px);
+  line-height:1.6;
+  text-shadow:0 2px 22px rgba(0,0,0,.95), 0 0 44px rgba(0,0,0,.8);
+  margin:0 0 .72em;
+  opacity:0;transform:translateY(14px);
+  transition:opacity .9s ease, transform .9s cubic-bezier(.2,.7,.3,1);
+}
+.act.live .cap .line{opacity:1;transform:translateY(0)}
+.act.live .cap .line:nth-child(2){transition-delay:.28s}
+.act.live .cap .line:nth-child(3){transition-delay:.56s}
+.cap .line.whisper{
+  font-family:var(--mono);
+  font-size:clamp(11px,3vw,13px);
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+.cap .line.amber{color:var(--amber)}
+
+.act .cap.bottom{position:absolute;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom,0px))}
+.act .cap.top{position:absolute;left:0;right:0;top:calc(52px + env(safe-area-inset-top,0px))}
+
+/* ============ 1. ЗАСТАВКА ============ */
+#a1 .art{position:absolute;inset:0;z-index:0}
+#a1 .art img{width:100%;height:100%;object-fit:cover;object-position:center center}
+#a1 .shroud{
+  position:absolute;inset:0;z-index:2;
+  background:rgba(4,5,9,.74);
+  transition:opacity 1.4s ease;
+}
+#a1.open .shroud{opacity:0}
+
+/* ЛИНИЯ РАЗРЕЗА — расходится по диагонали при входе */
+#a1 .slit{
+  position:absolute;inset:0;z-index:3;pointer-events:none;
+  overflow:hidden;
+}
+#a1 .slit::before,
+#a1 .slit::after{
+  content:"";position:absolute;
+  top:-20%;bottom:-20%;width:0;
+  background:linear-gradient(90deg,rgba(255,255,255,0),#fff 45%,#fff 55%,rgba(255,255,255,0));
+  box-shadow:0 0 40px 12px rgba(255,240,220,.75),0 0 90px 30px rgba(255,140,90,.4);
+  transform:rotate(14deg);
+  left:50%;
+  animation:slitPulse 3.2s ease-in-out infinite;
+}
+#a1 .slit::before{animation-delay:0s}
+#a1 .slit::after{animation-delay:1.6s;opacity:.55}
+@keyframes slitPulse{
+  0%,100%{width:1px;opacity:.35}
+  50%{width:3px;opacity:1}
+}
+#a1.open .slit::before,
+#a1.open .slit::after{
+  animation:none;
+  transition:width .9s cubic-bezier(.6,.02,.2,1), opacity .9s ease, filter .9s ease;
+  width:240vmax;
+  opacity:0;
+  filter:blur(22px);
+}
+#a1 .date{
+  position:relative;z-index:4;
+  font-family:var(--mono);
+  font-size:clamp(30px,11.5vw,68px);
+  letter-spacing:.1em;
+  color:#fff;
+  text-shadow:0 0 34px rgba(255,150,90,.55), 0 3px 30px rgba(0,0,0,.9);
+  margin-bottom:.5em;
+  opacity:0;
+  animation:dateIn 1.6s ease .9s forwards;
+}
+@keyframes dateIn{from{opacity:0;letter-spacing:.42em}to{opacity:1;letter-spacing:.1em}}
+#a1 .inner{position:relative;z-index:4;text-align:center}
+#a1 .sub{
+  font-family:var(--mono);font-size:clamp(10px,2.9vw,12px);
+  letter-spacing:.3em;text-transform:uppercase;color:#a9bdd1;
+  opacity:0;animation:dateIn 1.2s ease 1.7s forwards;
+}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  gap:10px;
+  margin-top:34px;
+  padding:14px 42px;
+  background:linear-gradient(180deg,rgba(46,58,74,.95),rgba(22,30,42,.97) 46%,rgba(11,16,24,.98));
+  border:1px solid rgba(150,196,232,.42);
+  border-radius:3px;
+  color:#e8f2fb;
+  font-family:var(--mono);font-size:clamp(12px,3.2vw,14px);
+  font-weight:700;letter-spacing:.24em;text-transform:uppercase;
+  cursor:pointer;
+  box-shadow:0 10px 26px rgba(0,0,0,.65),0 0 22px rgba(90,160,230,.18);
+  transition:box-shadow .28s,border-color .28s,transform .16s,background .28s;
+  opacity:0;animation:btnIn .9s ease 2.4s forwards;
+}
+@keyframes btnIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.btn::before{
+  content:"";width:8px;height:8px;border-radius:50%;
+  background:radial-gradient(circle at 34% 28%,#fff2ee 0%,#ff6a55 18%,#d81e10 52%,#6d0c06 100%);
+  box-shadow:0 0 7px rgba(255,70,45,.95),0 0 20px rgba(215,40,18,.5);
+  animation:recBlink 1.6s steps(1,end) infinite;
+}
+@keyframes recBlink{0%,55%{opacity:1}56%,100%{opacity:.18}}
+.btn:active{transform:scale(.97)}
+.btn:hover{border-color:rgba(200,232,255,.78);box-shadow:0 12px 30px rgba(0,0,0,.7),0 0 34px rgba(110,180,255,.42)}
+
+/* ============ 3. УФ-РЕЖИМ ============ */
+#a3{background:#000}
+#a3 .uvwrap{position:absolute;inset:0;z-index:1}
+#a3 .uvbase{
+  position:absolute;inset:0;z-index:1;
+  transition:opacity .9s ease, filter .9s ease;
+}
+#a3 .uvbase img{width:100%;height:100%;object-fit:cover;object-position:center center}
+#a3.scanning .uvbase{opacity:0}
+
+#a3 .uvlayer{
+  position:absolute;inset:0;z-index:2;
+  opacity:0;transition:opacity .8s ease;
+  pointer-events:none;
+  background:#000;
+}
+#a3 .uvlayer img{width:100%;height:100%;object-fit:cover}
+#a3.scanning .uvlayer{opacity:1}
+
+#a3 canvas{
+  position:absolute;inset:0;z-index:3;
+  width:100%;height:100%;
+  touch-action:manipulation;
+  opacity:0;transition:opacity .8s ease;
+}
+#a3.scanning canvas{opacity:1}
+
+#a3 .uvhint{
+  position:absolute;left:0;right:0;z-index:6;
+  top:calc(50% - 12px);
+  text-align:center;
+  font-family:var(--mono);font-size:clamp(10px,2.9vw,12px);
+  letter-spacing:.24em;text-transform:uppercase;
+  color:#cfd9e6;
+  text-shadow:0 2px 16px #000;
+  opacity:0;transition:opacity .6s;
+  pointer-events:none;
+}
+#a3 .uvhint.on{opacity:1;animation:hintPulse 2.4s ease-in-out infinite}
+@keyframes hintPulse{0%,100%{opacity:.35}50%{opacity:.95}}
+#a3.scanning .uvhint{opacity:0 !important}
+
+#a3 .uvoff{
+  position:absolute;z-index:7;
+  right:14px;bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  padding:9px 16px;
+  background:rgba(10,14,22,.85);
+  border:1px solid rgba(140,180,220,.35);
+  border-radius:2px;
+  color:#cfd9e6;
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  cursor:pointer;opacity:0;transition:opacity .5s;
+}
+#a3.scanning .uvoff{opacity:1}
+#a3 .counter{
+  position:absolute;z-index:7;
+  left:14px;bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  color:var(--uv2);opacity:0;transition:opacity .5s;
+}
+#a3.scanning .counter{opacity:.9}
+
+/* ============ 6. БАРАБАНЫ ============ */
+#a6 .lock{
+  position:relative;z-index:6;
+  display:flex;flex-direction:column;align-items:center;gap:20px;
+}
+#a6 .dials{display:flex;gap:10px}
+.dial{
+  display:flex;flex-direction:column;align-items:center;
+  background:linear-gradient(180deg,#1a1408,#0b0904);
+  border:1px solid rgba(214,168,92,.34);
+  border-radius:3px;
+  box-shadow:inset 0 1px 0 rgba(255,214,150,.14),0 8px 24px rgba(0,0,0,.8);
+  overflow:hidden;
+}
+.dial button{
+  background:none;border:0;color:rgba(214,180,120,.55);
+  font-size:13px;line-height:1;padding:7px 0;width:52px;
+  cursor:pointer;transition:color .2s;
+}
+.dial button:active{color:#fff}
+.digit{
+  width:52px;text-align:center;
+  font-family:var(--mono);font-size:clamp(26px,7.5vw,34px);
+  font-weight:700;color:#ffcf8a;
+  text-shadow:0 0 18px rgba(255,180,90,.6);
+  padding:4px 0;
+  border-top:1px solid rgba(214,168,92,.2);
+  border-bottom:1px solid rgba(214,168,92,.2);
+  user-select:none;
+}
+.dial .spin{animation:spin .22s ease}
+@keyframes spin{from{opacity:.2;transform:translateY(-6px) scale(.92)}to{opacity:1;transform:none}}
+#a6 .lockmsg{
+  font-family:var(--mono);font-size:clamp(10px,2.9vw,12px);
+  letter-spacing:.2em;text-transform:uppercase;color:#8d7a58;
+  min-height:1.4em;text-align:center;
+}
+#a6.unlocked .lock{opacity:0;pointer-events:none;transition:opacity .6s}
+#a6 .after{
+  position:absolute;inset:0;z-index:5;
+  opacity:0;pointer-events:none;
+  transition:opacity 1s ease;
+}
+#a6.unlocked .after{opacity:1}
+
+/* ============ 7. СВАЙП МАСКИ ============ */
+#a7 .swipewrap{
+  position:absolute;inset:0;z-index:2;
+  overflow:hidden;
+}
+#a7 .m-hidden{
+  position:absolute;inset:0;z-index:1;
+}
+#a7 .m-hidden img{width:100%;height:100%;object-fit:cover;object-position:center center}
+#a7 .sunsetv{width:100%;height:100%;object-fit:cover;object-position:center center;display:block}
+#a7 .sunsetfallback{display:none}
+#a7.vidfail .sunsetv{display:none}
+#a7.vidfail .sunsetfallback{display:block;width:100%;height:100%;object-fit:cover;object-position:center center}
+#a7 .m-mask{
+  position:absolute;inset:0;z-index:2;
+  transition:transform .95s cubic-bezier(.35,.02,.24,1), opacity .9s ease;
+  will-change:transform;
+  touch-action:none;
+}
+#a7 .m-mask img{width:100%;height:100%;object-fit:cover;object-position:center center}
+#a7.revealed .m-mask{transform:translateY(-108%) rotate(-1.5deg);opacity:0}
+#a7 .swipehint{
+  position:absolute;left:0;right:0;z-index:6;
+  bottom:calc(84px + env(safe-area-inset-bottom,0px));
+  text-align:center;
+  font-family:var(--mono);font-size:clamp(10px,2.9vw,12px);
+  letter-spacing:.24em;text-transform:uppercase;color:#cfd9e6;
+  text-shadow:0 2px 14px #000;
+  animation:swipeUp 1.8s ease-in-out infinite;
+  transition:opacity .4s;
+}
+@keyframes swipeUp{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-9px);opacity:1}}
+#a7.revealed .swipehint{opacity:0}
+
+/* ============ ФИНАЛ ============ */
+#a8{background:#05060a}
+#a8 .end{
+  position:relative;z-index:5;text-align:center;
+  width:min(520px,86vw);
+}
+#a8 .end .big{
+  font-size:clamp(19px,5vw,26px);line-height:1.55;margin:0 0 1em;
+}
+#a8 .end .sig{
+  font-family:var(--mono);font-size:11px;letter-spacing:.28em;
+  text-transform:uppercase;color:var(--dim);
+}
+#a8 .replay{
+  margin-top:38px;
+  background:none;border:1px solid rgba(150,196,232,.3);
+  color:#a9bdd1;font-family:var(--mono);font-size:11px;
+  letter-spacing:.2em;text-transform:uppercase;
+  padding:11px 26px;border-radius:2px;cursor:pointer;
+}
+#a8 .replay:active{background:rgba(120,170,220,.12)}
+
+/* ============ АНИМАЦИОННЫЕ СЛОИ ============ */
+/* лёгкое «дыхание» арта — кино, не слайдшоу */
+.act.live .frame img{animation:breath 14s ease-in-out infinite}
+@keyframes breath{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.028)}
+}
+
+/* виньетка + зерно поверх каждой сцены */
+.grain{
+  position:fixed;inset:0;z-index:90;pointer-events:none;
+  opacity:.055;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  animation:grainShift .9s steps(3) infinite;
+}
+@keyframes grainShift{
+  0%{transform:translate(0,0)}
+  33%{transform:translate(-14px,9px)}
+  66%{transform:translate(11px,-13px)}
+}
+
+/* дрожание в сценах напряжения (4, 5) */
+.act.shaky.live .frame{animation:shake 7s ease-in-out infinite}
+@keyframes shake{
+  0%,86%,100%{transform:translate(0,0)}
+  88%{transform:translate(2.5px,-1.5px)}
+  90%{transform:translate(-2px,2px)}
+  92%{transform:translate(1.5px,1.5px)}
+  94%{transform:translate(-1.5px,-1px)}
+  96%{transform:translate(1px,.5px)}
+}
+
+/* дата на заставке — красное свечение пульса */
+#a1 .date{animation:dateIn 1.6s ease .9s forwards, datePulse 3.4s ease-in-out 2.6s infinite}
+@keyframes datePulse{
+  0%,100%{text-shadow:0 0 34px rgba(255,150,90,.55), 0 3px 30px rgba(0,0,0,.9)}
+  50%{text-shadow:0 0 52px rgba(255,90,60,.85), 0 0 22px rgba(216,30,16,.5), 0 3px 30px rgba(0,0,0,.9)}
+}
+
+/* улики: вспышка при проявлении */
+#a3.scanning .uvlayer img{animation:uvFlicker 2.8s ease-in-out infinite}
+@keyframes uvFlicker{
+  0%,100%{filter:brightness(1) saturate(1)}
+  47%{filter:brightness(1.12) saturate(1.18)}
+  50%{filter:brightness(.82) saturate(.85)}
+  53%{filter:brightness(1.08) saturate(1.12)}
+}
+#uvdate{opacity:0 !important;transition:opacity 1.2s ease .3s !important}
+#a3.scanning #uvdate{opacity:1 !important}
+
+/* барабаны: дрожание замка при неверном положении */
+#a6 .dials.wrong{animation:lockShake .4s ease}
+@keyframes lockShake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-7px)}
+  40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(3px)}
+}
+
+/* разблокировка: вспышка света из ларца */
+#a6.unlocked .after::after{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 55%,
+    rgba(255,196,110,.5) 0%,rgba(255,150,60,.16) 34%,rgba(0,0,0,0) 68%);
+  animation:boxGlow 2.4s ease-out forwards;
+  pointer-events:none;
+}
+@keyframes boxGlow{
+  0%{opacity:0}
+  22%{opacity:1}
+  100%{opacity:0}
+}
+
+/* свайп-маска: дрожит под пальцем, тень при отлёте */
+#a7 .m-mask::after{
+  content:"";position:absolute;inset:0;
+  box-shadow:0 -30px 80px 20px rgba(0,0,0,.85);
+  opacity:0;transition:opacity .6s;
+  pointer-events:none;
+}
+#a7.revealed .m-mask::after{opacity:1}
+#a7 .m-mask img{animation:maskTremble 5s ease-in-out infinite}
+@keyframes maskTremble{
+  0%,78%,100%{transform:scale(1)}
+  82%{transform:scale(1.012)}
+  86%{transform:scale(1.004)}
+  90%{transform:scale(1.014)}
+}
+
+/* финал: текст проявляется построчно */
+#a8 .end .big, #a8 .end .sig, #a8 .replay{
+  opacity:0;transform:translateY(16px);
+  transition:opacity 1.1s ease, transform 1.1s cubic-bezier(.2,.7,.3,1);
+}
+#a8.live .end .big{opacity:1;transform:none;transition-delay:.3s}
+#a8.live .end .sig{opacity:1;transform:none;transition-delay:1.2s}
+#a8.live .replay{opacity:1;transform:none;transition-delay:2.1s}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition-duration:.01ms !important}
+  .act .frame img{opacity:1;transform:none}
+  .cap .line{opacity:1;transform:none}
+  #uvdate{opacity:1 !important}
+}
+</style>
+</head>
+<body>
+
+<div id="bar"></div>
+<div class="grain"></div>
+
+<!-- ============ 1. ЗАСТАВКА ============ -->
+<section class="act" id="a1" data-act="1">
+  <div class="art"><img src="img/web/intro_slash_v2.webp" alt=""></div>
+  <div class="shroud"></div>
+  <div class="slit"></div>
+  <div class="inner">
+    <div class="date">18.11.2026</div>
+    <div class="sub">есть дата, которую нельзя отменить</div>
+    <button class="btn" id="go" type="button">Войти</button>
+  </div>
+</section>
+
+<!-- ============ 2. ДОМ ============ -->
+<section class="act" id="a2" data-act="2">
+  <div class="frame duo" id="f2">
+    <img class="duo-a" src="img/web/02_house_a.webp" alt="">
+    <img class="duo-b" src="img/web/02_house_b.webp" alt="">
+  </div>
+  <div class="tapzone" id="t2" role="button" tabindex="0" aria-label="Приблизить фигуру"></div>
+  <div class="tap-hint" id="h2">коснись — он подойдёт ближе</div>
+  <div class="cap bottom">
+    <p class="line">Дом на другой стороне улицы.</p>
+    <p class="line">Внизу, на мокром асфальте — он. Лицом к её окну.</p>
+    <p class="line whisper">он ждёт внизу</p>
+  </div>
+</section>
+
+<!-- ============ 3. БЛИЖЕ ============ -->
+<section class="act shaky" id="a4" data-act="3">
+  <div class="frame duo" id="f4">
+    <img class="duo-a" src="img/web/04_call_a.webp" alt="">
+    <img class="duo-b" src="img/web/04_call_b.webp" alt="">
+  </div>
+  <div class="tapzone" id="t4" role="button" tabindex="0" aria-label="Посмотреть, что на экране"></div>
+  <div class="tap-hint" id="h4">коснись — глянь, что он прислал</div>
+  <div class="cap bottom">
+    <p class="line">Экран показал то, чего не было за спиной.</p>
+    <p class="line">Она не обернулась.</p>
+    <p class="line whisper">умнее — смотреть через стекло</p>
+  </div>
+</section>
+
+<!-- ============ 4. КРОВАТЬ ============ -->
+<section class="act shaky" id="a5" data-act="4">
+  <div class="frame" id="f5"><img src="img/web/05_trial_v3.webp" alt=""></div>
+  <div class="cap bottom">
+    <p class="line amber">Между ними осталась комната.</p>
+    <p class="line">Он не подошёл. Он ждал, когда подойдёт она.</p>
+  </div>
+</section>
+
+<!-- ============ 5. УФ: она возвращается и находит следы ============ -->
+<section class="act" id="a3" data-act="5">
+  <div class="uvwrap">
+    <div class="uvbase"><img src="img/web/03_room_phone_a.webp" alt=""></div>
+    <div class="uvlayer"><img src="img/web/uv_evidence.webp" alt=""></div>
+    <canvas id="uvc"></canvas>
+  </div>
+  <div class="uvhint on" id="uvhint">коснись экрана — включится уф</div>
+  <div class="counter" id="uvcnt"></div>
+  <button class="uvoff" id="uvoff" type="button">выкл</button>
+  <div class="cap bottom">
+    <p class="line">Он ушёл. Она вернулась в комнату — и включила свет.</p>
+    <p class="line whisper">в комнате остались следы</p>
+    <p class="line uv" id="uvdate">16 мая. Он был здесь даже тогда.</p>
+  </div>
+</section>
+
+<!-- ============ 6. ШКАТУЛКА ============ -->
+<section class="act" id="a6" data-act="6">
+  <div class="frame" id="f6"><img src="img/web/07_box_lock_a.webp" alt=""></div>
+  <div class="after" id="f6after"><img src="img/web/07_box_inside_a.webp" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center center"></div>
+
+  <div class="lock" id="lockui">
+    <div class="dials" id="dials"></div>
+    <div class="lockmsg" id="lockmsg">четыре цифры · 16 мая</div>
+  </div>
+
+  <div class="cap top" id="cap6">
+    <p class="line">На одеяле лежал ларец, которого здесь не было.</p>
+    <p class="line whisper">замок на четыре барабана · 1605</p>
+  </div>
+</section>
+
+<!-- ============ 7. МАСКА ============ -->
+<section class="act" id="a7" data-act="7">
+  <div class="swipewrap">
+    <div class="m-hidden">
+      <video id="sunsetv" class="sunsetv" src="img/web/sunset_walk.mp4" poster="img/web/06c_sunset.webp"
+             muted playsinline preload="none" loop></video>
+      <img class="sunsetfallback" src="img/web/06c_sunset.webp" alt="">
+    </div>
+    <div class="m-mask" id="mmask"><img src="img/web/06a_mask_off_a.webp" alt=""></div>
+  </div>
+  <div class="swipehint" id="swipehint">проведи вверх</div>
+  <div class="cap top" id="cap7">
+    <p class="line">Она знала это лицо.</p>
+  </div>
+</section>
+
+<!-- ============ ФИНАЛ ============ -->
+<section class="act" id="a8" data-act="8">
+  <div class="end">
+    <p class="big">Он не приходил знакомиться.<br>Он возвращался.</p>
+    <p class="sig">разрез · 18.11.2026</p>
+    <button class="replay" type="button" onclick="location.reload()">смотреть заново</button>
+  </div>
+</section>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- ЗВУК: WebAudio, без файлов ---------- */
+  var AC = null;
+  function audio(){
+    if (!AC){
+      try { AC = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e){ AC = null; }
+    }
+    if (AC && AC.state === 'suspended') AC.resume();
+    return AC;
+  }
+  /* тихий низкий гул — фон всей истории */
+  var droneOn = false;
+  function drone(){
+    var ac = audio(); if (!ac || droneOn) return;
+    droneOn = true;
+    var o = ac.createOscillator();
+    var g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = 42;
+    g.gain.value = 0;
+    o.connect(g); g.connect(ac.destination);
+    o.start();
+    g.gain.linearRampToValueAtTime(0.028, ac.currentTime + 3.5);
+    var o2 = ac.createOscillator();
+    var g2 = ac.createGain();
+    o2.type = 'sine'; o2.frequency.value = 63.5;
+    g2.gain.value = 0;
+    o2.connect(g2); g2.connect(ac.destination);
+    o2.start();
+    g2.gain.linearRampToValueAtTime(0.014, ac.currentTime + 5);
+  }
+  /* короткий щелчок (барабаны) */
+  function click(freq, vol){
+    var ac = audio(); if (!ac) return;
+    var o = ac.createOscillator();
+    var g = ac.createGain();
+    o.type = 'square'; o.frequency.value = freq || 620;
+    g.gain.setValueAtTime(vol || 0.05, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.09);
+    o.connect(g); g.connect(ac.destination);
+    o.start(); o.stop(ac.currentTime + 0.1);
+  }
+  /* глухой удар (открытие ларца / маска) */
+  function thud(){
+    var ac = audio(); if (!ac) return;
+    var o = ac.createOscillator();
+    var g = ac.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(120, ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(38, ac.currentTime + 0.32);
+    g.gain.setValueAtTime(0.16, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.5);
+    o.connect(g); g.connect(ac.destination);
+    o.start(); o.stop(ac.currentTime + 0.55);
+  }
+  /* УФ-блип при тапе */
+  function uvBlip(){
+    var ac = audio(); if (!ac) return;
+    var o = ac.createOscillator();
+    var g = ac.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(880, ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(1500, ac.currentTime + 0.08);
+    g.gain.setValueAtTime(0.03, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.14);
+    o.connect(g); g.connect(ac.destination);
+    o.start(); o.stop(ac.currentTime + 0.16);
+  }
+
+  /* ---------- прогресс ---------- */
+  var bar = document.getElementById('bar');
+  function onScroll(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  /* ---------- появление секций ---------- */
+  var acts = [].slice.call(document.querySelectorAll('.act'));
+  if ('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (en.isIntersecting){
+          en.target.classList.add('live');
+          if (en.intersectionRatio > 0.55) en.target.dataset.seen = '1';
+        }
+      });
+    }, {threshold:[0.25, 0.6]});
+    acts.forEach(function(a){ io.observe(a); });
+  } else {
+    acts.forEach(function(a){ a.classList.add('live'); });
+  }
+
+  /* ---------- 1. заставка ---------- */
+  var a1 = document.getElementById('a1');
+  document.getElementById('go').addEventListener('click', function(){
+    drone();
+    a1.classList.add('open');
+    setTimeout(function(){
+      document.getElementById('a2').scrollIntoView({behavior:'smooth', block:'start'});
+    }, 620);
+  });
+
+  /* ---------- парные кадры: тап переключает слой ---------- */
+  [['a2','t2'],['a4','t4']].forEach(function(pair){
+    var sec = document.getElementById(pair[0]);
+    var zone = document.getElementById(pair[1]);
+    if (!sec || !zone) return;
+    var peeked = false;
+    function peek(){
+      if (peeked) return;
+      peeked = true;
+      sec.classList.add('peek');
+    }
+    zone.addEventListener('click', peek);
+    zone.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); peek(); }
+    });
+    /* уводим зону с дороги, когда секция ушла из виду —
+       иначе она перехватывает тапы у соседних актов */
+    if ('IntersectionObserver' in window){
+      new IntersectionObserver(function(en){
+        zone.style.pointerEvents = en[0].isIntersecting ? 'auto' : 'none';
+      }, {threshold: 0.3}).observe(sec);
+    }
+  });
+
+  /* ---------- 3. УФ-РЕЖИМ (тап) ---------- */
+  var a3     = document.getElementById('a3');
+  var cv     = document.getElementById('uvc');
+  var ctx    = cv.getContext('2d');
+  var hint   = document.getElementById('uvhint');
+  var cntEl  = document.getElementById('uvcnt');
+  var offBtn = document.getElementById('uvoff');
+  var taps   = 0;
+  var TAPS_TO_ADVANCE = 4;
+  var uvActive = false;
+  var circles = [];
+
+  function sizeCanvas(){
+    var r = cv.getBoundingClientRect();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width  = Math.max(1, Math.round(r.width  * dpr));
+    cv.height = Math.max(1, Math.round(r.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    paint();
+  }
+
+  function paint(){
+    var r = cv.getBoundingClientRect();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(2,2,6,0.985)';
+    ctx.fillRect(0, 0, r.width, r.height);
+
+    ctx.globalCompositeOperation = 'destination-out';
+    circles.forEach(function(c){
+      var g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
+      g.addColorStop(0,    'rgba(0,0,0,1)');
+      g.addColorStop(0.55, 'rgba(0,0,0,.92)');
+      g.addColorStop(1,    'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function startUV(){
+    if (uvActive) return;
+    uvActive = true;
+    a3.classList.add('scanning');
+    sizeCanvas();
+    circles.push({x: cv.clientWidth * 0.5, y: cv.clientHeight * 0.52,
+                  r: Math.min(cv.clientWidth, cv.clientHeight) * 0.30});
+    paint();
+    taps++;
+    updateCnt();
+  }
+
+  function updateCnt(){
+    cntEl.textContent = 'улик: ' + taps + ' / ' + TAPS_TO_ADVANCE;
+    if (taps >= TAPS_TO_ADVANCE){
+      cntEl.textContent = 'хватит';
+      setTimeout(function(){
+        document.getElementById('a6').scrollIntoView({behavior:'smooth', block:'start'});
+      }, 1400);
+    }
+  }
+
+  function tapAt(clientX, clientY){
+    startUV();
+    uvBlip();
+    var r = cv.getBoundingClientRect();
+    var x = clientX - r.left;
+    var y = clientY - r.top;
+    var rad = Math.min(r.width, r.height) * 0.26;
+    circles.push({x:x, y:y, r:rad});
+    paint();
+    taps++;
+    updateCnt();
+  }
+
+  a3.addEventListener('pointerdown', function(e){
+    if (e.target.closest('.uvoff')) return;
+    tapAt(e.clientX, e.clientY);
+  });
+
+  offBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    uvActive = false;
+    a3.classList.remove('scanning');
+    circles = []; taps = 0;
+    updateCnt();
+    hint.classList.add('on');
+  });
+
+  window.addEventListener('resize', function(){
+    if (uvActive) sizeCanvas();
+  });
+
+  setTimeout(function(){
+    if (!uvActive) hint.classList.remove('on');
+  }, 6000);
+
+  /* ---------- 6. БАРАБАНЫ 1605 ---------- */
+  var CODE = [1,6,0,5];
+  var cur  = [0,0,0,0];
+  var dialsEl = document.getElementById('dials');
+  var lockmsg = document.getElementById('lockmsg');
+  var a6 = document.getElementById('a6');
+  var unlocked = false;
+
+  CODE.forEach(function(d, i){
+    var wrap = document.createElement('div');
+    wrap.className = 'dial';
+    var up = document.createElement('button');
+    up.type = 'button'; up.textContent = '▲'; up.setAttribute('aria-label','больше');
+    var dg = document.createElement('div');
+    dg.className = 'digit'; dg.textContent = '0';
+    var dn = document.createElement('button');
+    dn.type = 'button'; dn.textContent = '▼'; dn.setAttribute('aria-label','меньше');
+
+    function spin(delta){
+      if (unlocked) return;
+      cur[i] = (cur[i] + delta + 10) % 10;
+      dg.textContent = cur[i];
+      dg.classList.remove('spin'); void dg.offsetWidth; dg.classList.add('spin');
+      click(500 + cur[i] * 12, 0.04);
+      check();
+    }
+    up.addEventListener('click', function(e){ e.stopPropagation(); spin(1); });
+    dn.addEventListener('click', function(e){ e.stopPropagation(); spin(-1); });
+
+    var startY = null;
+    dg.addEventListener('pointerdown', function(e){ startY = e.clientY; dg.setPointerCapture(e.pointerId); });
+    dg.addEventListener('pointerup', function(e){
+      if (startY === null) return;
+      var dy = e.clientY - startY;
+      if (Math.abs(dy) > 18) spin(dy < 0 ? 1 : -1);
+      startY = null;
+    });
+
+    wrap.appendChild(up); wrap.appendChild(dg); wrap.appendChild(dn);
+    dialsEl.appendChild(wrap);
+  });
+
+  var hintTimer = null;
+  function check(){
+    var ok = cur.every(function(v, i){ return v === CODE[i]; });
+    if (ok){
+      unlocked = true;
+      lockmsg.textContent = 'щелчок';
+      click(880, 0.06);
+      setTimeout(thud, 130);
+      a6.classList.add('unlocked');
+      var f6 = document.getElementById('f6');
+      f6.querySelector('img').src = 'img/web/07_box_open_a.webp';
+      // единственный замок на весь подарок: сообщаем журналу, что шкатулка открыта
+      try{ parent.postMessage({type:'milkaBoxOpen'}, '*'); }catch(e){}
+      setTimeout(function(){
+        document.getElementById('a7').scrollIntoView({behavior:'smooth', block:'start'});
+      }, 2600);
+    } else {
+      var right = cur.filter(function(v,i){ return v === CODE[i]; }).length;
+      lockmsg.textContent = right > 0 ? ('совпало: ' + right + ' / 4') : 'четыре цифры · дата знакомства';
+      if (right > 0 && right < 4){
+        dialsEl.classList.remove('wrong'); void dialsEl.offsetWidth; dialsEl.classList.add('wrong');
+      }
+      clearTimeout(hintTimer);
+      hintTimer = setTimeout(function(){ lockmsg.textContent = '16 мая · шестнадцатое пятое'; }, 12000);
+    }
+  }
+  check();
+
+  /* кнопка из журнала: подвести к акту со шкатулкой */
+  window.addEventListener('message', function(e){
+    var d = e.data;
+    if (d && d.type === 'scrollToBox'){
+      document.getElementById('a6').scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  });
+
+  /* ---------- 7. СВАЙП МАСКИ ---------- */
+  var a7 = document.getElementById('a7');
+  var mask = document.getElementById('mmask');
+  var revealed = false;
+  var sy = null;
+
+  function reveal(){
+    if (revealed) return;
+    revealed = true;
+    thud();
+    a7.classList.add('revealed');
+    /* запуск видео закатa после свайпа */
+    (function(){
+      var v = document.getElementById('sunsetv');
+      if (!v) return;
+      try { v.load(); var pr = v.play(); if (pr && pr.catch) pr.catch(function(){}); } catch(e){}
+      v.addEventListener('error', function(){ a7.classList.add('vidfail'); });
+    })();
+    document.getElementById('cap7').querySelector('.line').textContent =
+      'Она узнала его сразу.';
+    setTimeout(function(){
+      var l = document.getElementById('cap7');
+      var p = document.createElement('p');
+      p.className = 'line';
+      p.textContent = 'И они ушли вместе — в самый край заката.';
+      l.appendChild(p);
+      void l.offsetWidth;
+      p.style.opacity = '1'; p.style.transform = 'none';
+    }, 700);
+  }
+
+  mask.addEventListener('pointerdown', function(e){
+    sy = e.clientY;
+    mask.setPointerCapture(e.pointerId);
+  });
+  mask.addEventListener('pointermove', function(e){
+    if (sy === null || revealed) return;
+    var dy = e.clientY - sy;
+    if (dy < -70){ reveal(); sy = null; }
+  });
+  mask.addEventListener('pointerup', function(){ sy = null; });
+
+  var a7seen = false;
+  if ('IntersectionObserver' in window){
+    var io7 = new IntersectionObserver(function(en){
+      if (en[0].isIntersecting && !a7seen){
+        a7seen = true;
+        setTimeout(reveal, 12000);
+      }
+    }, {threshold:0.6});
+    io7.observe(a7);
+  } else {
+    setTimeout(reveal, 14000);
+  }
+
+  /* ---------- фолбэк барабанов: 45 сек без ввода — код сам ---------- */
+  if ('IntersectionObserver' in window){
+    var io6 = new IntersectionObserver(function(en){
+      if (en[0].isIntersecting && !unlocked){
+        setTimeout(function(){
+          if (!unlocked){
+            cur = CODE.slice();
+            [].forEach.call(dialsEl.querySelectorAll('.digit'), function(d,i){ d.textContent = cur[i]; });
+            check();
+          }
+        }, 45000);
+      }
+    }, {threshold:0.6});
+    io6.observe(a6);
+  }
+
+  function svh(){
+    document.documentElement.style.setProperty('--vh', window.innerHeight * 0.01 + 'px');
+  }
+  svh();
+  window.addEventListener('resize', svh);
+
+})();
+</script>
+
+</body>
+</html>
